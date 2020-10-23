@@ -1,0 +1,1 @@
+#define __FPU_PRESENT   1
