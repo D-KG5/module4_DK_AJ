@@ -7,13 +7,16 @@
 #define ADC_12BIT 4096.0
 #define ADC_VREF 3.30
 /* FFT settings */
-#define SAMPLES                    2048             /* 256 real party and 256 imaginary parts */
+#define SAMPLES                    512             /* 256 real party and 256 imaginary parts */
 #define FFT_SIZE                SAMPLES / 2        /* FFT size is always the same size as we have samples, so 256 in our case */
 
 float32_t Input[SAMPLES];
 float32_t Output[FFT_SIZE];
 
 float32_t fake_dac_buffer[SAMPLES];
+
+DigitalOut LEDS(LED1);
+uint16_t frequency = 0;
 
 void fake_dac(void){
     static float32_t step = 0;
@@ -49,11 +52,16 @@ int main()
         TM_FFT_Process_F32(&FFT);
 
         // print fundamental freq
-        printf("Fundamental frequency is %d Hz\r\n", TM_FFT_GetMaxIndex(&FFT));
+        frequency = TM_FFT_GetMaxIndex(&FFT);
+        printf("Fundamental frequency is %d Hz\r\n", frequency);
 
         // blink led proportional to fundamental freq
+        uint32_t period_us = frequency * 1000000;
+        printf("Period is %d us\n", period_us);
         while(1){
             // end program
+            LEDS = !LEDS;
+            wait_us(period_us);
         }
 
     }
