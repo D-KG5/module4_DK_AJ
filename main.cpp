@@ -35,9 +35,10 @@ void fake_dac(void) {
     float voltage = 0;
     // output a sine wave with a frequency of 10004 Hz
     for(int16_t i = 0; i < SAMPLES; i++){
-        voltage = arm_sin_f32((float32_t)(2008.0 * PI * step)); // 1004 Hz sine wave [f(x) = sin(2008*pi*x)]
+        voltage = 1 + arm_sin_f32((float32_t)(2008.0 * PI * step)); // 1004 Hz sine wave [f(x) = 1 + sin(2008*pi*x)] with bias for DAC emulation (+ive integers only)
         fake_dac_buffer[i] = (int32_t) ((ADC_12BIT * voltage / ADC_VREF) - 1);    // scale raw sine samples to be what a DAC would output
         step += 0.00001;    // increment step size to ensure sine wave is detailed enough
+        printf("%d\n", fake_dac_buffer[i]);
     }
 }
 
@@ -53,9 +54,9 @@ uint32_t freq_calc(int32_t sample, uint16_t prevresult) {
     // shift the buffer contents
     prevsamp[1] = prevsamp[0];
     prevsamp[0] = sample;
-    // check for zero crossings
-    if(prevsamp[0] > 0) {
-        if(prevsamp[1] <= 0) {
+    // check for zero crossings (shifted up due to DAC emulation)
+    if(prevsamp[0] > 1240) {
+        if(prevsamp[1] <= 1240) {
             result = 1/ ((float32_t)sampcount / FREQ_SR) * 2;
             sampcount = 0;
             return result;
@@ -64,8 +65,8 @@ uint32_t freq_calc(int32_t sample, uint16_t prevresult) {
         sampcount++;
         return prevresult;
     }
-    if(prevsamp[0] < 0) {
-        if(prevsamp[1] >= 0) {
+    if(prevsamp[0] < 1240) {
+        if(prevsamp[1] >= 1240) {
             result = 1 / (sampcount / FREQ_SR) * 2;
             sampcount = 0;
             return result;
