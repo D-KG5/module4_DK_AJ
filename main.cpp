@@ -32,13 +32,11 @@ DigitalOut LEDS(LED1);
 */
 void fake_dac(void) {
     static float32_t step = 0;
-    float voltage = 0;
     // output a sine wave with a frequency of 10004 Hz
     for(int16_t i = 0; i < SAMPLES; i++){
-        voltage = 1 + arm_sin_f32((float32_t)(2008.0 * PI * step)); // 1004 Hz sine wave [f(x) = 1 + sin(2008*pi*x)] with bias for DAC emulation (+ive integers only)
+        float voltage = 1 + arm_sin_f32((float32_t)(2008.0 * PI * step)); // 1004 Hz sine wave [f(x) = 1 + sin(2008*pi*x)] with bias for DAC emulation (+ive integers only)
         fake_dac_buffer[i] = (int32_t) ((ADC_12BIT * voltage / ADC_VREF) - 1);    // scale raw sine samples to be what a DAC would output
         step += 0.00001;    // increment step size to ensure sine wave is detailed enough
-        printf("%d\n", fake_dac_buffer[i]);
     }
 }
 
@@ -86,8 +84,8 @@ uint32_t freq_calc(int32_t sample, uint16_t prevresult) {
 */
 int main() {
     TM_FFT_F32_t FFT;   // set up FFT struct for FFT analysis
-    uint16_t i = 0, period;
-    uint32_t frequency, frequency_backup;
+    uint16_t i = 0;
+    uint32_t frequency_backup = 0;
 
     fake_dac(); // run fake DAC to fill DAC buffer with sine wave samples
 
@@ -104,7 +102,7 @@ int main() {
         }
 
         TM_FFT_Process_F32(&FFT);   // process buffer and calculate FFT, max value, max index
-        frequency = TM_FFT_GetMaxIndex(&FFT);
+        uint32_t frequency = TM_FFT_GetMaxIndex(&FFT);
 
         // backup zero-crossing algorithm to measure frequency
         i = 0;
@@ -119,8 +117,8 @@ int main() {
         if(frequency != frequency_backup){
             frequency = frequency_backup;
         }
-        period = (1 / ((float32_t)frequency)) * 1000000;    // get period of frequency in uS
-        printf("Fundamental frequency is %d Hz\r\n", frequency);
+        uint16_t period = (1 / ((float32_t)frequency)) * 1000000;    // get period of frequency in uS
+        printf("Fundamental frequency is %u Hz\r\n", frequency);
         printf("Period is %d uS\n", period);
 
 
